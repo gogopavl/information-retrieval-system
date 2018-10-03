@@ -17,9 +17,15 @@ ps = PorterStemmer() # PorterStemmer toolkit
 stopwords =[] # List of stopwords
 termList = {} # This is my inverted index - Should implement it with a file! Must NOT cache list?
 
+totalWordCounter = 0 # Total number of words read - used for Heap's law
+uniqueTermCounter = 0 # Total number of unique terms - used for Heap's law
+
+
 def main():
+    global totalWordCounter
+
     ImportStopwordList(stopwordPath)
-    # f = open("output.txt", "w")
+    totalWordsVsUniqueWordsFile = open("out/words_vs_unique.csv", "w") # File to write total number of words vs unique words
 
     with open(inputFile) as currentFile:
         for counter, line in enumerate(currentFile):
@@ -27,11 +33,15 @@ def main():
                 termFormatted = StringFormatting(term); # Format word
                 termStemmed = ps.stem(termFormatted) # Stem word
                 # f.write(ps.stem(termStemmed)+'\n')
-                if isNotAStopword(termStemmed) and len(termStemmed) > 0: # Length > 0 so that I can eliminate empty strings
-                    AddToTermList(termStemmed) # Add term to dictionary
+                if len(termStemmed) > 0: # Length > 0 so that I can eliminate empty strings
+                    totalWordCounter += 1
+                    if isNotAStopword(termStemmed):
+                        AddToTermList(termStemmed) # Add term to dictionary
+                totalWordsVsUniqueWordsFile.write("%s,%s\n"%(totalWordCounter,uniqueTermCounter))
 
         ExportToCSV(termList)
         ExportToJSON(termList)
+        totalWordsVsUniqueWordsFile.close()
         # f.close()
 
 # Function that imports the stopwords list
@@ -57,10 +67,12 @@ def isNotAStopword(string):
 
 # Check whether a term is  within a my term dictionary or not
 def AddToTermList(key):
+    global uniqueTermCounter
     if key in termList:
         termList[key] = termList[key]+1
     else:
         termList[key] = 1
+        uniqueTermCounter += 1
 
 # Writes index/terms and freqs to a file in CSV format
 def ExportToCSV(dictionary):
