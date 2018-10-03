@@ -1,5 +1,4 @@
 import collections # To sort dictionary if wanted
-import nltk
 import time # Calculate runtime
 import json # To write index in a json format
 import csv # To write index in a csv format
@@ -20,7 +19,6 @@ termList = {} # This is my inverted index - Should implement it with a file! Mus
 totalWordCounter = 0 # Total number of words read - used for Heap's law
 uniqueTermCounter = 0 # Total number of unique terms - used for Heap's law
 
-
 def main():
     global totalWordCounter
 
@@ -37,7 +35,7 @@ def main():
                     totalWordCounter += 1
                     if isNotAStopword(termStemmed):
                         AddToTermList(termStemmed) # Add term to dictionary
-                totalWordsVsUniqueWordsFile.write("%s,%s\n"%(totalWordCounter,uniqueTermCounter))
+                    totalWordsVsUniqueWordsFile.write("%s,%s\n"%(totalWordCounter,uniqueTermCounter))
 
         ExportToCSV(termList)
         ExportToJSON(termList)
