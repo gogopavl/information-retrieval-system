@@ -7,8 +7,6 @@ import re # Regular expression handler
 from nltk.tokenize import word_tokenize # Tokenizer
 from nltk.stem import PorterStemmer # Porter stemmer
 
-toc = time.time() # Start stopwatch
-
 inputFile = 'data/bible.txt'
 stopwordPath = 'stopwords.txt'
 
@@ -26,10 +24,10 @@ def main():
     totalWordsVsUniqueWordsFile = open("out/words_vs_unique.csv", "w") # File to write total number of words vs unique words
 
     with open(inputFile) as currentFile:
-        for counter, line in enumerate(currentFile):
+    for line in currentFile:
             for term in word_tokenize(line):
                 termFormatted = StringFormatting(term); # Format word
-                termStemmed = ps.stem(termFormatted) # Stem word
+                termStemmed = ps.stem(termFormatted) # Stem word - Try Snowball stemmer!!! May be quicker
                 # f.write(ps.stem(termStemmed)+'\n')
                 if len(termStemmed) > 0: # Length > 0 so that I can eliminate empty strings
                     totalWordCounter += 1
@@ -86,7 +84,7 @@ def ExportToJSON(dictionary):
     jsonFile.write(jsonStruct)
     jsonFile.close()
 
-# Invoke main
-main()
-tic = time.time()
+toc = time.time() # Start stopwatch
+main() # Invoke main
+tic = time.time() # Stop stopwatch
 print("Total runtime = {}".format(tic-toc))
