@@ -1,4 +1,4 @@
-
+# Class that implements an inverted index structure
 import xml.etree.ElementTree as ET
 # Parse input file
 
