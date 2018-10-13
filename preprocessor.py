@@ -1,20 +1,18 @@
 # Class implementing the preprocessing toolkit
 
-# Contains methods for:
-# Tokenizing text
-# Formatting tokens - lower case, removing chars etc.
-# Stemming terms
-# Checking whether a term is a stopword or not
-import re # Python regular expressionss
-import nltk
-from stemming.porter2 import *
-# from porter2stemmer import Porter2Stemmer
+import re # Python regular expressions
+from stemming.porter2 import stem # Porter stemmer function
+from nltk.stem.snowball import SnowballStemmer
 
 class Preprocessor(object):
     '''Class of type object that provides a basic toolkit for text preprocessing'''
 
+    snws = SnowballStemmer("english") # Initialize snowball stemmer - for all instances?
+    stopwords = {} # Set with stopwords - O(1) search
+
     def __init__(self):
-        '''Empty constructor of Class Preprocessor'''
+        '''Constructor of Class Preprocessor'''
+        self.loadStopwords()
 
     def tokenize(self, string):
         '''Splits argument 'string' and returns a list of the tokens. The regular expression used
@@ -23,10 +21,25 @@ class Preprocessor(object):
         kinds of words should not be split. '''
         return re.split(r'(?!\'\b)\W+', string) # r stands for raw expression
 
-    def stemWord(self, word):
+    def stemWordPorter(self, word):
         '''Stems the given word using the Porter Stemmer library'''
         return stem(word)
+
+    def stemWordSnowball(self, word):
+        '''Stems the given word using the Porter Stemmer library'''
+        return self.snws.stem(word)
 
     def toLowerCase(self, word):
         '''Method that receives a word and returns it with all letters in lower case'''
         return word.lower()
+
+    def isNotAStopword(self, word):
+        '''Returns true if the given word is not a stopword, otherwise false'''
+        if word in self.stopwords:
+            return False
+        return True
+
+    def loadStopwords(self):
+        '''Method that loads all stopword terms from file and saves them to a set structure'''
+        with open('stopwords.txt') as stopWordFile:
+            self.stopwords = stopWordFile.read().splitlines()
