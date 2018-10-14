@@ -24,7 +24,7 @@ class Preprocessor(object):
 
     def stemWordPorter(self, word):
         '''Stems the given word using the Porter Stemmer library'''
-        return porter.stem(word)
+        return self.porter.stem(word)
 
     def stemWordSnowball(self, word):
         '''Stems the given word using the Porter Stemmer library'''
