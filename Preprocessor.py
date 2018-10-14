@@ -42,5 +42,5 @@ class Preprocessor(object):
 
     def loadStopwords(self):
         '''Method that loads all stopword terms from file and saves them to a set structure'''
-        with open('stopwords.txt') as stopWordFile:
+        with open('data/stopwords.txt') as stopWordFile:
             self.stopwords = stopWordFile.read().splitlines()
