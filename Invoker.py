@@ -1,8 +1,8 @@
-from Preprocessor import *
 from InvertedIndex import *
+import time
 
-#ppr = Preprocessor()
+toc = time.time()
 ii = InvertedIndex()
+tic = time.time()
 
-ii.insertTermOccurrence("example", 1, 14)
-ii.insertTermOccurrence("example", 1, 18)
+print('Runtime = {} seconds'.format(tic-toc))

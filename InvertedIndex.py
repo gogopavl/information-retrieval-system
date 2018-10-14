@@ -1,6 +1,8 @@
 # Class that implements an inverted index structure
 import xml.etree.ElementTree as ET
 from Preprocessor import *
+import collections
+import os
 
 class InvertedIndex(object):
     '''Class that implements the positional inverted index'''
@@ -10,7 +12,8 @@ class InvertedIndex(object):
     def __init__(self):
         '''Constructor of Class InvertedIndex. Initializes inverted index dictionary structure.'''
         self.invertedIndexDictionary = {}
-        self.parseXMLFile('data/collections/mini.xml')
+        self.parseXMLFile('data/trec.sample.xml')
+        self.exportInvertedIndexToDirectory('out/')
 
     def initializeTerm(self, term):
         '''Method that initializes the dictionary structure for the documents in which the term is located'''
@@ -20,7 +23,6 @@ class InvertedIndex(object):
         '''Method that initializes the list of positions that the term occurs within a document'''
         self.invertedIndexDictionary[term][docID] = []
 
-
     def insertTermOccurrence(self, term, docID, position):
         '''Method that inserts an occurence of a term in the inverted index'''
         if term not in self.invertedIndexDictionary:
@@ -28,11 +30,9 @@ class InvertedIndex(object):
         if docID not in self.invertedIndexDictionary[term]:
             self.initializeDoc(term, docID)
         self.invertedIndexDictionary[term][docID].append(position)
-            #elif docID not in self.invertedIndexDictionary[term]:
-            #self.initializeDoc(term, docID)
 
     def parseXMLFile(self, pathToFile):
-        '''Doc of func'''
+        '''Method that parses the collection of documents and updates the inverted index'''
         tree = ET.parse(pathToFile)
         root = tree.getroot()
         # Text = []
@@ -40,52 +40,39 @@ class InvertedIndex(object):
             for node in child:
                 node_tag = node.tag
                 if node_tag == 'DOCNO':
-                    docID = node.text
+                    docID = int(node.text)
+                if node_tag == 'HEADLINE':
+                    headlineText = node.text[16:-1] # fix this - should not be hardcoded
+                    # print(repr(headlineText[0:15]))
                 if node_tag == 'TEXT':
-                    for s in self.ppr.tokenize(node.text):
-                        lowerCase = self.ppr.toLowerCase(s)
-                        if (len(lowerCase) > 1): #and (self.ppr.isNotAStopword(lowerCase)):
-                            self.insertTermOccurrence(lowerCase, int(docID), 4) # Put correct position through string index
-                            # self.insertTermOccurrence(self.ppr.stemWordPorter(lowerCase), int(docID), 4) # Put correct position through string index
+                    position = 1
+                    text = node.text
+                    headlineAndText = headlineText + ' ' + text
+                    # print('Doc {} = {}'.format(docID, headlineAndText))
+                    for word in self.ppr.tokenize(headlineAndText):
+                        lowerCase = self.ppr.toLowerCase(word)
+                        if (len(lowerCase) > 0) and (self.ppr.isNotAStopword(lowerCase)):
+                            self.insertTermOccurrence(lowerCase, docID, position) # Put correct position through string index
+                            position += 1
+
+    def exportInvertedIndexToDirectory(self, folder):
+        '''Method that exports the positional inverted index to a file within a specified directory'''
+        if not os.path.exists(folder): # Check whether the directory exists or not
+            os.makedirs(folder)
+        # Write operations
+        with open('out/index.output', 'w') as output:
+            ordered = self.orderIndex(self.invertedIndexDictionary) # shouldn't be like this!!!
+            for term in ordered:#self.invertedIndexDictionary:
+                output.write('{}:\n'.format(term))
+                termNumOfOccurr = 0
+                for doc in ordered[term]:#self.invertedIndexDictionary[term]:
+                    positionList = ",".join(map(str, ordered[term][doc]))#self.invertedIndexDictionary[term][doc])) # Formatting the string with the positions
+                    output.write('\t{}: {}\n'.format(doc, positionList))
+
+    def importInvertedIndexFromFile(self, pathToFile):
+        '''Method that import an already created positional inverted index from a file'''
 
 
-
-
-        print('lems {}'.format(len(self.invertedIndexDictionary)))
-        for term in self.invertedIndexDictionary:
-            counter = 0
-            for doc in self.invertedIndexDictionary[term]:
-                for pos in self.invertedIndexDictionary[term][doc]:
-                    counter += 1
-            print('Term is =  {}, Number of occurrences: {}'.format(term, counter))
-                #print(self.invertedIndexDictionary[term][doc])
-
-
-
-
-
-
-
-
-
-
-
-
-#pathToFile = 'data/collections/sample.xml'
-
-
-
-
-#def parseXMLFile(pathToFile):
-#    with open(pathToFile) as currentFile:
-#        for line in currentFile:
-#            if "<DOCNO>" in line:
-#                print("id")
-
-#def parseXML(pathToFile):
-#    xmlTree = ET.parse(pathToFile)
-#    print(xmlTree.getroot())
-
-
-#parseXMLFile(pathToFile)
-#parseXML(pathToFile)
+    def orderIndex(self, invertedIndex):
+        '''Method that orders the inverted index based on its keys'''
+        return collections.OrderedDict(sorted(invertedIndex.items()))

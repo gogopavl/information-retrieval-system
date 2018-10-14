@@ -87,7 +87,7 @@ def ExportToCSV(dictionary):
 
 # Writes index/terms and freqs to a file in Json format
 def ExportToJSON(dictionary):
-    orderedDictionary = collections.OrderedDict(sorted(termList.items()))
+    orderedDictionary = collections.OrderedDict(sorted())
     jsonStruct = json.dumps(orderedDictionary)
     jsonFile = open("out/output.json","w")
     jsonFile.write(jsonStruct)
