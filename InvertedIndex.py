@@ -25,38 +25,40 @@ class InvertedIndex(object):
         '''Method that inserts an occurence of a term in the inverted index'''
         if term not in self.invertedIndexDictionary:
             self.initializeTerm(term)
-            if docID not in self.invertedIndexDictionary[term]:
-                self.initializeDoc(term, docID)
-        elif docID not in self.invertedIndexDictionary[term]:
+        if docID not in self.invertedIndexDictionary[term]:
             self.initializeDoc(term, docID)
-            self.invertedIndexDictionary[term][docID].append(position)
+        self.invertedIndexDictionary[term][docID].append(position)
+            #elif docID not in self.invertedIndexDictionary[term]:
+            #self.initializeDoc(term, docID)
 
     def parseXMLFile(self, pathToFile):
         '''Doc of func'''
         tree = ET.parse(pathToFile)
         root = tree.getroot()
-        Text = []
+        # Text = []
         for child in root:
             for node in child:
                 node_tag = node.tag
                 if node_tag == 'DOCNO':
                     docID = node.text
-                    print('DOC id is {}'.format(docID))
                 if node_tag == 'TEXT':
                     for s in self.ppr.tokenize(node.text):
                         lowerCase = self.ppr.toLowerCase(s)
-                        if (len(lowerCase) > 1) and (self.ppr.isNotAStopword(lowerCase)):
-                            self.insertTermOccurrence(self.ppr.stemWordPorter(lowerCase), int(docID), 4) # Put correct position through string index
+                        if (len(lowerCase) > 1): #and (self.ppr.isNotAStopword(lowerCase)):
+                            self.insertTermOccurrence(lowerCase, int(docID), 4) # Put correct position through string index
+                            # self.insertTermOccurrence(self.ppr.stemWordPorter(lowerCase), int(docID), 4) # Put correct position through string index
 
 
 
 
         print('lems {}'.format(len(self.invertedIndexDictionary)))
         for term in self.invertedIndexDictionary:
-            print(term)
+            counter = 0
             for doc in self.invertedIndexDictionary[term]:
-                print(doc)
-                print(self.invertedIndexDictionary[term][doc])
+                for pos in self.invertedIndexDictionary[term][doc]:
+                    counter += 1
+            print('Term is =  {}, Number of occurrences: {}'.format(term, counter))
+                #print(self.invertedIndexDictionary[term][doc])
 
 
 
