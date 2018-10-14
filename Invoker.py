@@ -1,8 +1,8 @@
 from Preprocessor import *
+from InvertedIndex import *
 
-ppr = Preprocessor()
+#ppr = Preprocessor()
+ii = InvertedIndex()
 
-str = ppr.tokenize()
-print(str)
-for s in str:
-    print('{} isNotAStopword: {}'.format(s, ppr.isNotAStopword(s)))
+ii.insertTermOccurrence("example", 1, 14)
+ii.insertTermOccurrence("example", 1, 18)
