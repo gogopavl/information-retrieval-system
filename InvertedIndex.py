@@ -2,6 +2,7 @@
 import xml.etree.ElementTree as ET
 from Preprocessor import *
 import collections
+from collections import OrderedDict
 import os
 
 class InvertedIndex(object):
@@ -14,12 +15,12 @@ class InvertedIndex(object):
         self.invertedIndexDictionary = {}
 
     def buildIndex(self):
+        '''Method that invokes functions in order to build the positional inverted index'''
         self.parseXMLFile('data/trec.sample.xml')
-        self.exportInvertedIndexToDirectory('out/')
 
     def initializeTerm(self, term):
         '''Method that initializes the dictionary structure for the documents in which the term is located'''
-        self.invertedIndexDictionary[term] = {}
+        self.invertedIndexDictionary[term] = OrderedDict()
 
     def initializeDoc(self, term , docID):
         '''Method that initializes the list of positions that the term occurs within a document'''
@@ -40,7 +41,7 @@ class InvertedIndex(object):
         if docID not in self.invertedIndexDictionary[term]:
             self.initializeDoc(term, docID)
         self.invertedIndexDictionary[term][docID].extend(listOfPositions)
-        print('inserted and size is: {}'.format(len(self.invertedIndexDictionary)))
+        # print('inserted and size is: {}'.format(len(self.invertedIndexDictionary)))
 
     def parseXMLFile(self, pathToFile):
         '''Method that parses the collection of documents and updates the inverted index'''
@@ -70,8 +71,11 @@ class InvertedIndex(object):
         '''Method that exports the positional inverted index to a file within a specified directory'''
         if not os.path.exists(folder): # Check whether the directory exists or not
             os.makedirs(folder)
+        filename = 'index.output'
+        if folder == 'outQP/':
+            filename = 'qp.out'
         # Write operations
-        with open('out/index.output', 'w') as output:
+        with open(folder + filename, 'w') as output:
             ordered = self.orderIndex(self.invertedIndexDictionary) # shouldn't be like this!!!
             for term in ordered:#self.invertedIndexDictionary:
                 output.write('{}:\n'.format(term))
@@ -82,4 +86,8 @@ class InvertedIndex(object):
 
     def orderIndex(self, invertedIndex):
         '''Method that orders the inverted index based on its keys'''
+        # print(len(invertedIndex))
         return collections.OrderedDict(sorted(invertedIndex.items()))
+
+    def printLength(self):
+        print('my length is: {}'.format(len(self.invertedIndexDictionary)))
