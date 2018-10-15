@@ -12,6 +12,8 @@ class InvertedIndex(object):
     def __init__(self):
         '''Constructor of Class InvertedIndex. Initializes inverted index dictionary structure.'''
         self.invertedIndexDictionary = {}
+
+    def buildIndex(self):
         self.parseXMLFile('data/trec.sample.xml')
         self.exportInvertedIndexToDirectory('out/')
 
@@ -30,6 +32,15 @@ class InvertedIndex(object):
         if docID not in self.invertedIndexDictionary[term]:
             self.initializeDoc(term, docID)
         self.invertedIndexDictionary[term][docID].append(position)
+
+    def insertMultipleTermOccurrences(self, term, docID, listOfPositions):
+        '''Method that inserts a list of occurences of a term in the inverted index - useful for externaly building the inverted index'''
+        if term not in self.invertedIndexDictionary:
+            self.initializeTerm(term)
+        if docID not in self.invertedIndexDictionary[term]:
+            self.initializeDoc(term, docID)
+        self.invertedIndexDictionary[term][docID].extend(listOfPositions)
+        print('inserted and size is: {}'.format(len(self.invertedIndexDictionary)))
 
     def parseXMLFile(self, pathToFile):
         '''Method that parses the collection of documents and updates the inverted index'''
@@ -68,10 +79,6 @@ class InvertedIndex(object):
                 for doc in ordered[term]:#self.invertedIndexDictionary[term]:
                     positionList = ",".join(map(str, ordered[term][doc]))#self.invertedIndexDictionary[term][doc])) # Formatting the string with the positions
                     output.write('\t{}: {}\n'.format(doc, positionList))
-
-    def importInvertedIndexFromFile(self, pathToFile):
-        '''Method that import an already created positional inverted index from a file'''
-
 
     def orderIndex(self, invertedIndex):
         '''Method that orders the inverted index based on its keys'''
