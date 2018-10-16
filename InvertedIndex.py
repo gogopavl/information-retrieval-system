@@ -47,23 +47,25 @@ class InvertedIndex(object):
         '''Method that parses the collection of documents and updates the inverted index'''
         tree = ET.parse(pathToFile)
         root = tree.getroot()
-        # Text = []
+        hasHeadline = False
         for child in root:
             for node in child:
                 node_tag = node.tag
                 if node_tag == 'DOCNO':
                     docID = int(node.text)
                 if node_tag == 'HEADLINE':
-                    headlineText = node.text[16:-1] # fix this - should not be hardcoded
-                    # print(repr(headlineText[0:15]))
-                if node_tag == 'TEXT':
+                    hasHeadline = True
+                    headlineText = node.text.split("/", 1)[1].strip()
+                if node_tag == 'TEXT' or node_tag == 'Text': # So that I can parse both input files
                     position = 1
                     text = node.text
-                    headlineAndText = headlineText + ' ' + text
-                    # print('Doc {} = {}'.format(docID, headlineAndText))
+                    if hasHeadline:
+                        headlineAndText = headlineText + ' ' + text
+                    else:
+                        headlineAndText = text
                     for word in self.ppr.tokenize(headlineAndText):
                         lowerCase = self.ppr.toLowerCase(word)
-                        if (len(lowerCase) > 0) and (self.ppr.isNotAStopword(lowerCase)):
+                        if (len(lowerCase) > 0): # and (self.ppr.isNotAStopword(lowerCase)):
                             self.insertTermOccurrence(lowerCase, docID, position) # Put correct position through string index
                             position += 1
 
@@ -83,11 +85,12 @@ class InvertedIndex(object):
                 for doc in ordered[term]:#self.invertedIndexDictionary[term]:
                     positionList = ",".join(map(str, ordered[term][doc]))#self.invertedIndexDictionary[term][doc])) # Formatting the string with the positions
                     output.write('\t{}: {}\n'.format(doc, positionList))
+                output.write('\n')
 
     def orderIndex(self, invertedIndex):
         '''Method that orders the inverted index based on its keys'''
-        # print(len(invertedIndex))
         return collections.OrderedDict(sorted(invertedIndex.items()))
 
     def printLength(self):
+        '''Method that return the number of items in the index'''
         print('my length is: {}'.format(len(self.invertedIndexDictionary)))
