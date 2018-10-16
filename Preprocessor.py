@@ -8,7 +8,7 @@ from nltk.stem import PorterStemmer
 class Preprocessor(object):
     '''Class of type object that provides a basic toolkit for text preprocessing'''
     # snws = SnowballStemmer("english") # Initialize snowball stemmer - for all instances?
-    stopwords = {} # Set with stopwords - O(1) search
+    stopwords = set() # Set with stopwords - O(1) search
     porter = PorterStemmer()
 
     def __init__(self):
@@ -43,4 +43,4 @@ class Preprocessor(object):
     def loadStopwords(self):
         '''Method that loads all stopword terms from file and saves them to a set structure'''
         with open('data/stopwords.txt') as stopWordFile:
-            self.stopwords = stopWordFile.read().splitlines()
+            self.stopwords = set(stopWordFile.read().splitlines())
