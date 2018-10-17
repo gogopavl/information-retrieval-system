@@ -43,6 +43,14 @@ class InvertedIndex(object):
         self.invertedIndexDictionary[term][docID].extend(listOfPositions)
         # print('inserted and size is: {}'.format(len(self.invertedIndexDictionary)))
 
+    def getTermDocumentSet(self, term):
+        '''Method that returns the set of document ids for a given term'''
+        return set(sorted(self.invertedIndexDictionary[term].keys()))
+
+    def getTermDocumentDictionary(self, term):
+        '''Method that returns the dictionary of document ids and positions for a given term'''
+        return self.invertedIndexDictionary[term]
+
     def parseXMLFile(self, pathToFile):
         '''Method that parses the collection of documents and updates the inverted index'''
         tree = ET.parse(pathToFile)
@@ -63,10 +71,9 @@ class InvertedIndex(object):
                         headlineAndText = headlineText + ' ' + text
                     else:
                         headlineAndText = text
-                    for word in self.ppr.tokenize(headlineAndText):
-                        lowerCase = self.ppr.toLowerCase(word)
-                        if (len(lowerCase) > 0): # and (self.ppr.isNotAStopword(lowerCase)):
-                            self.insertTermOccurrence(lowerCase, docID, position) # Put correct position through string index
+                    for word in self.ppr.tokenize(self.ppr.toLowerCase(headlineAndText)):
+                        if (len(word) > 0) and (self.ppr.isNotAStopword(word)):
+                            self.insertTermOccurrence(self.ppr.stemWordPorter(word), docID, position)
                             position += 1
 
     def exportInvertedIndexToDirectory(self, folder):

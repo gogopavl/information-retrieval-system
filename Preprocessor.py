@@ -30,9 +30,9 @@ class Preprocessor(object):
         '''Stems the given word using the Porter Stemmer library'''
         return self.snws.stem(word)
 
-    def toLowerCase(self, word):
+    def toLowerCase(self, string):
         '''Method that receives a word and returns it with all letters in lower case'''
-        return word.lower()
+        return string.lower()
 
     def isNotAStopword(self, word):
         '''Returns true if the given word is not a stopword, otherwise false'''
