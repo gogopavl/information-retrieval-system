@@ -4,8 +4,8 @@ import time
 
 start = time.time()
 
-#ii = InvertedIndex()
-#ii.buildIndex()
+# ii = InvertedIndex()
+# ii.buildIndex()
 
 built = time.time()
 
@@ -17,19 +17,22 @@ qp.importInvertedIndexFromFile('out/index.output')
 
 loaded = time.time()
 
-
 # print('Building ii = {} seconds'.format(built-start))
 # print('Saving ii = {} seconds'.format(saved-built))
 # print('Loading ii = {} seconds'.format(loaded-saved))
 
-qp.importBooleanQuery('queries/boolean2.txt')
+qp.importBooleanQuery('queries/boolean.txt')
 qp.importTFIDFQuery('queries/tfidf.txt')
+
+execute = time.time()
+
 qp.executeBooleanQueries()
+qp.executeTFIDFQueries()
 
 #qp.exportInvertedIndexToDirectory('outQP/')
 
 end = time.time()
 
-print('Reading qs = {} seconds'.format(end-loaded))
+print('All queries executed in = {} seconds'.format(end-execute))
 
 # qp.printIISize()

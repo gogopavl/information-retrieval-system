@@ -41,11 +41,10 @@ class InvertedIndex(object):
         if docID not in self.invertedIndexDictionary[term]:
             self.initializeDoc(term, docID)
         self.invertedIndexDictionary[term][docID].extend(listOfPositions)
-        # print('inserted and size is: {}'.format(len(self.invertedIndexDictionary)))
 
     def getTermDocumentSet(self, term):
         '''Method that returns the set of document ids for a given term'''
-        return set(sorted(self.invertedIndexDictionary[term].keys()))
+        return set(self.invertedIndexDictionary[term].keys())
 
     def getTermDocumentDictionary(self, term):
         '''Method that returns the dictionary of document ids and positions for a given term'''

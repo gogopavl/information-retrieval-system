@@ -1,5 +1,4 @@
 # Class implementing the preprocessing toolkit
-
 import re # Python regular expressions
 # from stemming.porter2 import stem # Porter stemmer function
 # from nltk.stem.snowball import SnowballStemmerpo
@@ -20,7 +19,7 @@ class Preprocessor(object):
         is (?!\'\b)\W+ which splits the string in every non alphanumeric character (\W+) except the
         case in which a hypostrophe is within a word (?!\'\b) e.g. don't, isn't, I'm, etc. These
         kinds of words should not be split. '''
-        return re.split(r'(?!\'|\&\b)\W+', string) # r stands for raw expression
+        return re.split(r'(?!\'|\&|\-\b)\W+', string) # r stands for raw expression - test different approaches!!!
 
     def stemWordPorter(self, word):
         '''Stems the given word using the Porter Stemmer library'''
