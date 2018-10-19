@@ -7,3 +7,6 @@
 7 "income taxes"
 8 #10(income, taxes)
 9 "middle east" AND peace
+10 NOT Window
+11 NOT "income taxes"
+12 NOT "Scotland Window" AND condemning

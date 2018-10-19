@@ -16,7 +16,7 @@ class InvertedIndex(object):
 
     def buildIndex(self):
         '''Method that invokes functions in order to build the positional inverted index'''
-        self.parseXMLFile('data/trec.sample.xml')
+        self.parseXMLFile('data/trec.5000.xml')
 
     def initializeTerm(self, term):
         '''Method that initializes the dictionary structure for the documents in which the term is located'''
@@ -79,7 +79,7 @@ class InvertedIndex(object):
         '''Method that exports the positional inverted index to a file within a specified directory'''
         if not os.path.exists(folder): # Check whether the directory exists or not
             os.makedirs(folder)
-        filename = 'index.output'
+        filename = 'index.5000.output'
         if folder == 'outQP/':
             filename = 'qp.out'
         # Write operations
@@ -99,4 +99,4 @@ class InvertedIndex(object):
 
     def printLength(self):
         '''Method that return the number of items in the index'''
-        print('my length is: {}'.format(len(self.invertedIndexDictionary)))
+        print('Number of terms in II: {}'.format(len(self.invertedIndexDictionary)))

@@ -1,7 +1,9 @@
 # Class that implements the query processor
 from Preprocessor import *
 from InvertedIndex import *
+import numpy as np
 import collections
+import operator
 
 class QueryProcessor(object):
     '''Class that implements the query processor engine'''
@@ -16,13 +18,13 @@ class QueryProcessor(object):
 
     def complexExpressionHandler(self, query):
         '''Method used to parse and handle the logical expression'''
-        expressionSets = [] # List of sets
+        expressionSets = [] # List of sets used for AND & OR  handling
         if "AND" in query:
-            for simpleExpression in query.split('AND'):
+            for simpleExpression in query.split(' AND '):
                 expressionSets.append(self.simpleExpressionHandler(simpleExpression.strip()))
             return expressionSets[0].intersection(expressionSets[1])
         elif "OR" in query:
-            for simpleExpression in query.split('OR'):
+            for simpleExpression in query.split(' OR '):
                 expressionSets.append(self.simpleExpressionHandler(simpleExpression.strip()))
             return expressionSets[0].union(expressionSets[1])
         elif "#" in query:
@@ -31,9 +33,8 @@ class QueryProcessor(object):
             termPair = tempList[1].split(')')[0]
             return self.proximityHandler(termPair, distance)
         else:
-            expressionSets.append(self.simpleExpressionHandler(query))
+            # expressionSets.append(self.simpleExpressionHandler(query))
             return self.simpleExpressionHandler(query)
-        # return expressionSets
 
     def simpleExpressionHandler(self, singleExpression):
         '''Method used to return proper set'''
@@ -41,9 +42,11 @@ class QueryProcessor(object):
             standaloneTerm = singleExpression.split('NOT')[1].strip()
             if '"' in standaloneTerm:
                 # call "" phrase handler
-                docs = self.phraseHandler(standaloneTerm)
+                termDocumentSet = self.phraseHandler(standaloneTerm)
                 # termSet = self.ii.getTermDocumentSet(self.preprocessedTerm(standaloneTerm)) # Get set of docIDs and return complementary
-            return self.docIDSet - termSet # Return complementary
+            else:
+                termDocumentSet = self.ii.getTermDocumentSet(self.preprocessedTerm(standaloneTerm))
+            return self.docIDSet - termDocumentSet # Return complementary
         elif '"' in singleExpression:
             # translate to proximity with window = 1
             return self.phraseHandler(singleExpression)
@@ -58,7 +61,6 @@ class QueryProcessor(object):
 
     def proximityHandler(self, proximityQuery, distance):
         '''Method that handles proximity queries'''
-        print('Handling {} with proximity = {}'.format(proximityQuery, distance))
         bothTerms = proximityQuery.split(',')
         term1 = bothTerms[0].strip()
         term2 = bothTerms[1].strip()
@@ -110,10 +112,21 @@ class QueryProcessor(object):
     def calculateTFIDF(self, query):
         '''Method thats calculates the TFIDF score for a given query'''
         # len(self.docIDSet)  == N - entire collection
+        queryDocumentScores = {}
         for term in self.ppr.tokenize(self.ppr.toLowerCase(query)):
+            termScore = 0
             if (len(term) > 0) and (self.ppr.isNotAStopword(term)):
-                print('Term = {} and doc dictionary = {}'.format(term, self.ii.getTermDocumentDictionary(self.ppr.stemWordPorter(term))))
-        # TODO Calculate tf idf based on query term dictionaries!!! :)
+                termDictionary = self.ii.getTermDocumentDictionary(self.ppr.stemWordPorter(term))
+                for doc, positions in termDictionary.items():
+                    if doc not in queryDocumentScores:
+                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10(len(self.docIDSet)/len(termDictionary)))
+                    else:
+                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10(len(self.docIDSet)/len(termDictionary)))
+
+        tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
+        # tfidfRanked = sorted(queryDocumentScores.items(), key=operator.itemgetter(1))
+        print('\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n{}'.format(query))
+        print('Rank = {}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'.format(tfidfRanked))
 
     def importBooleanQuery(self, pathToFile):
         '''Method to save the queries in the structure'''
