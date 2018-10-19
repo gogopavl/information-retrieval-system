@@ -1,3 +1,4 @@
+# Invoker class
 from InvertedIndex import *
 from QueryProcessor import *
 import time
