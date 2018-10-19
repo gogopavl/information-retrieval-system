@@ -1,8 +1,8 @@
 # Class that implements an inverted index structure
+from collections import OrderedDict
 import xml.etree.ElementTree as ET
 from Preprocessor import *
 import collections
-from collections import OrderedDict
 import os
 
 class InvertedIndex(object):
@@ -44,11 +44,19 @@ class InvertedIndex(object):
 
     def getTermDocumentSet(self, term):
         '''Method that returns the set of document ids for a given term'''
-        return set(self.invertedIndexDictionary[term].keys())
+        if term not in self.invertedIndexDictionary:
+            emptySet = ()
+            return emptySet
+        else:
+            return set(self.invertedIndexDictionary[term].keys())
 
     def getTermDocumentDictionary(self, term):
         '''Method that returns the dictionary of document ids and positions for a given term'''
-        return self.invertedIndexDictionary[term]
+        if term not in self.invertedIndexDictionary:
+            emptyDictionary = {}
+            return emptyDictionary
+        else:
+            return self.invertedIndexDictionary[term]
 
     def parseXMLFile(self, pathToFile):
         '''Method that parses the collection of documents and updates the inverted index'''

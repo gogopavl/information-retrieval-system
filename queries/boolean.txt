@@ -10,3 +10,4 @@
 10 NOT Window
 11 NOT "income taxes"
 12 NOT "Scotland Window" AND condemning
+13 "dikefale thee"

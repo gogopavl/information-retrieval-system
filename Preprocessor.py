@@ -1,12 +1,9 @@
 # Class implementing the preprocessing toolkit
+from nltk.stem import PorterStemmer # Porter Stemmer
 import re # Python regular expressions
-# from stemming.porter2 import stem # Porter stemmer function
-# from nltk.stem.snowball import SnowballStemmerpo
-from nltk.stem import PorterStemmer
 
 class Preprocessor(object):
     '''Class of type object that provides a basic toolkit for text preprocessing'''
-    # snws = SnowballStemmer("english") # Initialize snowball stemmer - for all instances?
     stopwords = set() # Set with stopwords - O(1) search
     porter = PorterStemmer()
 
@@ -16,10 +13,10 @@ class Preprocessor(object):
 
     def tokenize(self, string):
         '''Splits argument 'string' and returns a list of the tokens. The regular expression used
-        is (?!\'\b)\W+ which splits the string in every non alphanumeric character (\W+) except the
-        case in which a hypostrophe is within a word (?!\'\b) e.g. don't, isn't, I'm, etc. These
-        kinds of words should not be split. '''
-        return re.split(r'(?!\'|\&|\-\b)\W+', string) # r stands for raw expression - test different approaches!!!
+        is (?!\&\b)\W+ which splits the string in every non alphanumeric character (\W+) except the
+        case in which a & is within a word (?!\&\b) e.g. AT&T, P&G, etc. These kinds of words should
+        not be split. '''
+        return re.split(r'(?!\&\b)\W+', string) # r stands for raw expression
 
     def stemWordPorter(self, word):
         '''Stems the given word using the Porter Stemmer library'''

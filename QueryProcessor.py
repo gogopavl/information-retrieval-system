@@ -1,4 +1,5 @@
 # Class that implements the query processor
+from collections import OrderedDict
 from Preprocessor import *
 from InvertedIndex import *
 import numpy as np
@@ -12,13 +13,15 @@ class QueryProcessor(object):
     def __init__(self):
         '''Constructor of Class QueryProcessor'''
         self.ii = InvertedIndex()
-        self.docIDSet = set()  #  Later use sorted(set) to print!!!
-        self.booleanQueries = []
-        self.tfidfQueries = []
+        self.docIDSet = set()  #  Set used to calculate complementary sets (NOT case) and collection size (TF-IDF)
+        self.booleanQueries = [] # List to store imported boolean queries
+        self.tfidfQueries = [] # List to store imported tfidf queries
+        self.booleanQueriesDictionary = {}
+        self.tfidfQueriesDictionary = {}
 
     def complexExpressionHandler(self, query):
         '''Method used to parse and handle the logical expression'''
-        expressionSets = [] # List of sets used for AND & OR  handling
+        expressionSets = [] # List of sets used for AND & OR expressions handling
         if "AND" in query:
             for simpleExpression in query.split(' AND '):
                 expressionSets.append(self.simpleExpressionHandler(simpleExpression.strip()))
@@ -33,7 +36,6 @@ class QueryProcessor(object):
             termPair = tempList[1].split(')')[0]
             return self.proximityHandler(termPair, distance)
         else:
-            # expressionSets.append(self.simpleExpressionHandler(query))
             return self.simpleExpressionHandler(query)
 
     def simpleExpressionHandler(self, singleExpression):
@@ -41,15 +43,12 @@ class QueryProcessor(object):
         if 'NOT' in singleExpression:
             standaloneTerm = singleExpression.split('NOT')[1].strip()
             if '"' in standaloneTerm:
-                # call "" phrase handler
                 termDocumentSet = self.phraseHandler(standaloneTerm)
-                # termSet = self.ii.getTermDocumentSet(self.preprocessedTerm(standaloneTerm)) # Get set of docIDs and return complementary
             else:
                 termDocumentSet = self.ii.getTermDocumentSet(self.preprocessedTerm(standaloneTerm))
             return self.docIDSet - termDocumentSet # Return complementary
         elif '"' in singleExpression:
-            # translate to proximity with window = 1
-            return self.phraseHandler(singleExpression)
+            return self.phraseHandler(singleExpression) # translate to proximity with window = 1
         else:
             return self.ii.getTermDocumentSet(self.preprocessedTerm(singleExpression))
 
@@ -92,22 +91,17 @@ class QueryProcessor(object):
 
     def executeBooleanQueries(self):
         '''Method that executes boolean queries'''
-        queryResults = [] # List to store query execution results - maybe use an ordered dictionary?
-        for q in self.booleanQueries:
-            queryResults.append(self.complexExpressionHandler(q))
-        for r in queryResults:
-            if isinstance(r, set):
-                print('query result = {}'.format(sorted(r)))
-            else:
-                print('query result = ', sorted(r))
-        # Instead, invoke file writer method
+        queryResults = OrderedDict()
+        for k, v in self.booleanQueriesDictionary.items():
+            queryResults[k] = self.complexExpressionHandler(v)
+        self.writeBooleanResultsToFile(queryResults, 'out/boolean.results')
 
     def executeTFIDFQueries(self):
         '''Method that executes TFIDF queries'''
-        queryResults = [] # List to store query execution results - maybe use an ordered dictionary?
-        for q in self.tfidfQueries:
-            queryResults.append(self.calculateTFIDF(q))
-
+        queryResults = OrderedDict()
+        for k, v in self.tfidfQueriesDictionary.items():
+            queryResults[k] = self.calculateTFIDF(v)
+        self.writeTFIDFResultsToFile(queryResults, 'out/tfidf.results')
 
     def calculateTFIDF(self, query):
         '''Method thats calculates the TFIDF score for a given query'''
@@ -125,28 +119,50 @@ class QueryProcessor(object):
 
         tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
         # tfidfRanked = sorted(queryDocumentScores.items(), key=operator.itemgetter(1))
-        print('\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n{}'.format(query))
-        print('Rank = {}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n'.format(tfidfRanked))
-
-    def importBooleanQuery(self, pathToFile):
-        '''Method to save the queries in the structure'''
-        self.booleanQueries = self.parseQueriesFile(pathToFile)
-
-    def importTFIDFQuery(self, pathToFile):
-            '''Method to save the queries in the structure'''
-            self.tfidfQueries = self.parseQueriesFile(pathToFile)
-
-    def parseQueriesFile(self, pathToFile):
-        '''Method to read the a query file'''
-        listOfQueries = []
-        with open(pathToFile, 'r') as queryFile:
-            for line in queryFile:
-                listOfQueries.append(line.split(" ", 1)[1].strip())
-        return listOfQueries
+        return queryDocumentScores
 
     def preprocessedTerm(self, word):
         '''Function that preprocesses the given word - normalizes and stems'''
         return self.ppr.stemWordPorter(self.ppr.toLowerCase(word.strip()))
+
+    def importBooleanQuery(self, pathToFile):
+        '''Method to save the queries in the structure'''
+        self.booleanQueriesDictionary = self.parseQueriesFile(pathToFile)
+
+    def importTFIDFQuery(self, pathToFile):
+        '''Method to save the queries in the structure'''
+        self.tfidfQueriesDictionary = self.parseQueriesFile(pathToFile)
+
+    def writeBooleanResultsToFile(self, results, pathToFile):
+        '''Method that writes the boolean query results to a file'''
+        with open(pathToFile, 'w') as output:
+            for k, v in results.items():
+                if len(v) == 0:
+                    output.write('{:<3}{:<3}{:<8}{:<3}{:<8}{:<3}\n'.format(k,0,'null',0,'null',0))
+                for counter, doc in enumerate(sorted(v)):
+                    if counter == 999:
+                        break
+                    output.write('{:<3}{:<3}{:<8}{:<3}{:<8}{:<3}\n'.format(k,0,doc,0,1,0))
+
+    def writeTFIDFResultsToFile(self, results, pathToFile):
+        '''Method that writes the tfidf query results to a file'''
+        with open(pathToFile, 'w') as output:
+            for k, v in results.items():
+                if len(v) == 0:
+                    output.write('{:<3}{:<3}{:<8}{:<3}{:<8}{:<3}\n'.format(k,0,'null',0,'null',0))
+                for counter, entry in enumerate(sorted(v.items(), key=lambda (k,v): v, reverse = True)):
+                    if counter == 999:
+                        break
+                    output.write('{:<3}{:<3}{:<8}{:<3}{:<8.3f}{:<3}\n'.format(k,0,entry[0],0,entry[1],0))
+
+    def parseQueriesFile(self, pathToFile):
+        '''Method to read the a query file'''
+        dictionaryOfQueries = OrderedDict() # Temp structure to keep queries
+        with open(pathToFile, 'r') as queryFile:
+            for queryID, line in enumerate(queryFile):
+                splittedQuery = line.split(" ", 1)
+                dictionaryOfQueries[int(splittedQuery[0].strip())] = splittedQuery[1].strip()
+            return dictionaryOfQueries
 
     ################################################################################################################
     ## COMM WITH INVERTED INDEX
