@@ -13,71 +13,72 @@ class QueryProcessor(object):
     def __init__(self):
         '''Constructor of Class QueryProcessor'''
         self.ii = InvertedIndex()
-        self.docIDSet = set()  #  Set used to calculate complementary sets (NOT case) and collection size (TF-IDF)
-        self.booleanQueries = [] # List to store imported boolean queries
-        self.tfidfQueries = [] # List to store imported tfidf queries
-        self.booleanQueriesDictionary = {}
-        self.tfidfQueriesDictionary = {}
+        self.docIDSet = set()  # Set used to calculate complementary sets ("NOT" case) and collection size (TF-IDF)
+        self.collectionSize = 0 # Variable used to store the collection size for calculating the TFIDF queries
+        self.booleanQueriesDictionary = OrderedDict() # Ordered dictionary used to store boolean queries - {queryID, booleanQuery}
+        self.tfidfQueriesDictionary = OrderedDict() # Ordered dictionary used to store tfidf queries - {queryID, tfidfQuery}
 
     def complexExpressionHandler(self, query):
         '''Method used to parse and handle the logical expression'''
         expressionSets = [] # List of sets used for AND & OR expressions handling
-        if "AND" in query:
+        if " AND " in query:
             for simpleExpression in query.split(' AND '):
                 expressionSets.append(self.simpleExpressionHandler(simpleExpression.strip()))
             return expressionSets[0].intersection(expressionSets[1])
-        elif "OR" in query:
+        elif " OR " in query:
             for simpleExpression in query.split(' OR '):
                 expressionSets.append(self.simpleExpressionHandler(simpleExpression.strip()))
             return expressionSets[0].union(expressionSets[1])
         elif "#" in query:
             tempList = query.split('(')
-            distance = int(re.sub('[^A-Za-z0-9]+', '', tempList[0]))
-            termPair = tempList[1].split(')')[0]
-            return self.proximityHandler(termPair, distance)
+            distance = int(re.sub('[^0-9]+', '', tempList[0])) # Extract distance
+            termPair = tempList[1].split(')')[0] # Exract term pair
+            return self.proximityHandler(termPair, distance, False) # Send to proximity handler and return result
         else:
             return self.simpleExpressionHandler(query)
 
     def simpleExpressionHandler(self, singleExpression):
         '''Method used to return proper set'''
         if 'NOT' in singleExpression:
-            standaloneTerm = singleExpression.split('NOT')[1].strip()
+            standaloneTerm = singleExpression.split('NOT', 1)[1].strip()
             if '"' in standaloneTerm:
                 termDocumentSet = self.phraseHandler(standaloneTerm)
             else:
                 termDocumentSet = self.ii.getTermDocumentSet(self.preprocessedTerm(standaloneTerm))
             return self.docIDSet - termDocumentSet # Return complementary
         elif '"' in singleExpression:
-            return self.phraseHandler(singleExpression) # translate to proximity with window = 1
+            return self.phraseHandler(singleExpression) # Convert to proximity with distance = 1 and specify that term occurrence order matters - isPhrase = True
         else:
             return self.ii.getTermDocumentSet(self.preprocessedTerm(singleExpression))
 
     def phraseHandler(self, phraseQuery):
         '''Method that handles phrase queries'''
         termsWithoutQuotes = re.sub(r'[\"]+', '', phraseQuery)
-        termsCommaSeparated = re.sub(r' ', ',', termsWithoutQuotes)
-        return self.proximityHandler(termsCommaSeparated, 1)
+        termsCommaSeparated = re.sub(r' ', ',', termsWithoutQuotes) # Convert to proximity format
+        return self.proximityHandler(termsCommaSeparated, 1, True)
 
-    def proximityHandler(self, proximityQuery, distance):
+    def proximityHandler(self, proximityQuery, distance, isPhrase):
         '''Method that handles proximity queries'''
-        bothTerms = proximityQuery.split(',')
-        term1 = bothTerms[0].strip()
-        term2 = bothTerms[1].strip()
-
+        termPair = proximityQuery.split(',')
+        term1 = termPair[0].strip() # Extract term 1
+        term2 = termPair[1].strip() # Extract term 2
         dict1 = self.ii.getTermDocumentDictionary(self.preprocessedTerm(term1))
         dict2 = self.ii.getTermDocumentDictionary(self.preprocessedTerm(term2))
-
-        intersection = sorted(set(dict1.keys()).intersection(set(dict2.keys())))
-        matchingDocuments = []
+        intersection = sorted(set(dict1.keys()).intersection(set(dict2.keys()))) # Search only in their intersection - no point in searching the whole collection.
+        matchingDocuments = [] # List to store all matching documets
         for document in intersection:
             currentDocumentList1 = dict1[document]
             currentDocumentList2 = dict2[document]
-            i = 0
-            j = 0
-            thereIsNoMatch = True
-            notOutOfBounds = True
-            while(thereIsNoMatch and notOutOfBounds):
-                if (abs((currentDocumentList1[i] - currentDocumentList2[j])) <= distance) and ((currentDocumentList1[i] - currentDocumentList2[j]) <= 0):
+            i = 0 # Index i for linear merge implementation
+            j = 0 # Index j for linear merge implementation
+            thereIsNoMatch = True # Flag to break the while loop - first occurrence satisfies since boolean search only returns docIDs, not positions
+            notOutOfBounds = True # Flag to break the while loop - indeces should not exceed the
+            while(thereIsNoMatch and notOutOfBounds): # Linear merge comparison
+                if isPhrase:
+                    condition = ((currentDocumentList1[i] - currentDocumentList2[j]) <= 0) # In case it is a phrase order matters, so the second term should appear only after the first one
+                else:
+                    condition = True
+                if (abs((currentDocumentList1[i] - currentDocumentList2[j])) <= distance) and condition:
                     thereIsNoMatch = False
                     matchingDocuments.append(document)
                 else:
@@ -86,7 +87,7 @@ class QueryProcessor(object):
                     elif currentDocumentList1[i] >= currentDocumentList2[j] and j < len(currentDocumentList2) - 1:
                         j += 1
                     else:
-                        notOutOfBounds = False
+                        notOutOfBounds = False # Only if both indeces have exceeded the structure then break
         return set(matchingDocuments)
 
     def executeBooleanQueries(self):
@@ -105,20 +106,41 @@ class QueryProcessor(object):
 
     def calculateTFIDF(self, query):
         '''Method thats calculates the TFIDF score for a given query'''
-        # len(self.docIDSet)  == N - entire collection
         queryDocumentScores = {}
         for term in self.ppr.tokenize(self.ppr.toLowerCase(query)):
             termScore = 0
+            termStemmed = self.ppr.stemWordPorter(term)
             if (len(term) > 0) and (self.ppr.isNotAStopword(term)):
-                termDictionary = self.ii.getTermDocumentDictionary(self.ppr.stemWordPorter(term))
+                termDictionary = self.ii.getTermDocumentDictionary(termStemmed)
+                termDictionarySize = len(termDictionary)
+                if len(termDictionarySize == 0): # If the term does not exist in index just ignore it
+                    continue
                 for doc, positions in termDictionary.items():
                     if doc not in queryDocumentScores:
-                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10(len(self.docIDSet)/len(termDictionary)))
+                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Initialize term score
                     else:
-                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10(len(self.docIDSet)/len(termDictionary)))
+                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Add to term score
 
         tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
-        # tfidfRanked = sorted(queryDocumentScores.items(), key=operator.itemgetter(1))
+        return queryDocumentScores
+
+    def calculateTFIDFSecond(self, query):
+        queryDocumentScores = {}
+        for term in self.ppr.tokenize(self.ppr.toLowerCase(query)):
+            termScore = 0
+            termStemmed = self.ppr.stemWordPorter(term)
+            if (len(term) > 0) and (self.ppr.isNotAStopword(term)):
+                termDictionary = self.ii.getTermDocumentDictionary(termStemmed)
+                termDictionarySize = len(termDictionary)
+                if len(termDictionarySize == 0): # If the term does not exist in index just ignore it
+                    continue
+                for doc, positions in termDictionary.items():
+                    if doc not in queryDocumentScores:
+                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Initialize term score
+                    else:
+                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Add to term score
+
+        tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
         return queryDocumentScores
 
     def preprocessedTerm(self, word):
@@ -146,6 +168,9 @@ class QueryProcessor(object):
 
     def writeTFIDFResultsToFile(self, results, pathToFile):
         '''Method that writes the tfidf query results to a file'''
+        path = pathToFile.rsplit('/', 1)[0]
+        if not os.path.exists(path): # Check whether the directory exists or not
+            os.makedirs(path)
         with open(pathToFile, 'w') as output:
             for k, v in results.items():
                 if len(v) == 0:
@@ -179,6 +204,7 @@ class QueryProcessor(object):
                     self.docIDSet.add(docID) # Adding docID to set - used for NOT operation
                     listOfPositions = map(int, termDocEntry[1].strip().split(','))
                     self.ii.insertMultipleTermOccurrences(term, docID, listOfPositions) # Put correct position through string index
+        self.collectionSize = len(self.docIDSet) # Updating collection size
 
     def exportInvertedIndexToDirectory(self, folder):
         '''Method that invokes the ii export method'''

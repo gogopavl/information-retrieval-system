@@ -5,18 +5,19 @@ import time
 
 start = time.time()
 
-ii = InvertedIndex()
-ii.buildIndex()
+# ii = InvertedIndex()
+# ii.buildIndexFromFile('data/trec.sample.xml')
+# ii.buildIndexFromFile('data/trec.5000.xml')
 
 built = time.time()
 
-ii.exportInvertedIndexToDirectory('out/')
-ii.printLength()
+# ii.exportInvertedIndexToDirectory('out/output.index')
+# ii.printLength()
 
 saved = time.time()
 
 qp = QueryProcessor()
-qp.importInvertedIndexFromFile('out/index.output')
+qp.importInvertedIndexFromFile('out/output.index')
 # qp.importInvertedIndexFromFile('out/index.5000.output')
 
 loaded = time.time()

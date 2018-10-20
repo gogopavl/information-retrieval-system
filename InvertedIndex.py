@@ -14,9 +14,9 @@ class InvertedIndex(object):
         '''Constructor of Class InvertedIndex. Initializes inverted index dictionary structure.'''
         self.invertedIndexDictionary = {}
 
-    def buildIndex(self):
+    def buildIndexFromFile(self, pathToFile):
         '''Method that invokes functions in order to build the positional inverted index'''
-        self.parseXMLFile('data/trec.5000.xml')
+        self.parseXMLFile(pathToFile)
 
     def initializeTerm(self, term):
         '''Method that initializes the dictionary structure for the documents in which the term is located'''
@@ -83,15 +83,13 @@ class InvertedIndex(object):
                             self.insertTermOccurrence(self.ppr.stemWordPorter(word), docID, position)
                             position += 1
 
-    def exportInvertedIndexToDirectory(self, folder):
+    def exportInvertedIndexToDirectory(self, pathToFile):
         '''Method that exports the positional inverted index to a file within a specified directory'''
-        if not os.path.exists(folder): # Check whether the directory exists or not
-            os.makedirs(folder)
-        filename = 'index.5000.output'
-        if folder == 'outQP/':
-            filename = 'qp.out'
+        path = pathToFile.rsplit('/', 1)[0]
+        if not os.path.exists(path): # Check whether the directory exists or not
+            os.makedirs(path)
         # Write operations
-        with open(folder + filename, 'w') as output:
+        with open(pathToFile, 'w') as output:
             ordered = self.orderIndex(self.invertedIndexDictionary) # shouldn't be like this!!!
             for term in ordered:#self.invertedIndexDictionary:
                 output.write('{}:\n'.format(term))
