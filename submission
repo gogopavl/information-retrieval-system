@@ -1,0 +1,36 @@
+[cutlass]s1884197: submit ttds cw1 tts1
+
+Please wait! "submit" has not yet finished.
+
+This sometimes takes a while. Please be patient.
+/usr/bin/shar: Saving tts1/results.ranked.txt (text)
+/usr/bin/shar: Saving tts1/results.boolean.txt (text)
+/usr/bin/shar: Saving tts1/index.txt (text)
+/usr/bin/shar: Saving tts1/code.zip (text)
+/usr/bin/shar: Saving tts1/Report.pdf (text)
+
+
+Submit the following for exercise cw1 of course ttds.
+/afs/inf.ed.ac.uk/user/s18/s1884197/Documents/tts1
+
+***
+Remember that you may make multiple submissions before the deadline;
+the last one will be marked.
+If your course permits; a single late submission with penalty is allowed, 
+provided no submission has been made before the deadline.
+***
+
+Is this correct (y/n: n aborts)? y
+x - created lock directory _sh24237.
+x - created directory tts1.
+x - extracting tts1/results.ranked.txt (text)
+x - extracting tts1/results.boolean.txt (text)
+x - extracting tts1/index.txt (text)
+x - extracting tts1/code.zip (text)
+x - extracting tts1/Report.pdf (text)
+x - removed lock directory _sh24237.
+
+
+Submission of the following for exercise cw1 of course ttds succeeded:
+/afs/inf.ed.ac.uk/user/s18/s1884197/Documents/tts1
+
