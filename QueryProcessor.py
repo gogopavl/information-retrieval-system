@@ -33,6 +33,18 @@ class QueryProcessor(object):
         self.booleanQueriesDictionary = OrderedDict() # Ordered dictionary used to store boolean queries - {queryID, booleanQuery}
         self.tfidfQueriesDictionary = OrderedDict() # Ordered dictionary used to store tfidf queries - {queryID, tfidfQuery}
 
+    def executeBooleanQueries(self):
+        """Initializes results variable and invokes necessary methods to execute each of the given boolean queries
+
+        Notes
+        -----
+        Does not return results. Instead, invokes the "writeBooleanResultsToFile" method, which exports them to a file
+        """
+        queryResults = OrderedDict()
+        for k, v in self.booleanQueriesDictionary.items():
+            queryResults[k] = self.complexExpressionHandler(v)
+        self.writeBooleanResultsToFile(queryResults, 'out/results.boolean.txt')
+
     def complexExpressionHandler(self, query):
         """Parses and handles a logical expression.
         Afterwards, passes necessary arguments to method "simpleExpressionHandler" to retrieve subsets
@@ -156,18 +168,6 @@ class QueryProcessor(object):
                         notOutOfBounds = False # Only if both indeces have exceeded the structure then break
         return set(matchingDocuments)
 
-    def executeBooleanQueries(self):
-        """Initializes results variable and invokes necessary methods to execute each of the given boolean queries
-
-        Notes
-        -----
-        Does not return results. Instead, invokes the "writeBooleanResultsToFile" method, which exports them to a file
-        """
-        queryResults = OrderedDict()
-        for k, v in self.booleanQueriesDictionary.items():
-            queryResults[k] = self.complexExpressionHandler(v)
-        self.writeBooleanResultsToFile(queryResults, 'out/boolean.results')
-
     def executeTFIDFQueries(self):
         """Initializes results variable and invokes necessary methods to execute each of the given tfidf ranked queries
 
@@ -178,7 +178,7 @@ class QueryProcessor(object):
         queryResults = OrderedDict()
         for k, v in self.tfidfQueriesDictionary.items():
             queryResults[k] = self.calculateTFIDF(v)
-        self.writeTFIDFResultsToFile(queryResults, 'out/tfidf.results')
+        self.writeTFIDFResultsToFile(queryResults, 'out/results.ranked.txt')
 
     def calculateTFIDF(self, query):
         """Calculates the TFIDF score for a given query
@@ -210,21 +210,6 @@ class QueryProcessor(object):
 
         tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
         return queryDocumentScores
-
-    def preprocessedTerm(self, word):
-        """Preprocesses the given word and stems using the Preprocessor module
-
-        Parameters
-        ----------
-        word : String type
-            A word
-
-        Returns
-        -------
-        preprocessedTerm : String type
-            The stripped, lowercase and stemmed version of the given word
-        """
-        return self.ppr.stemWordPorter(self.ppr.toLowerCase(word.strip()))
 
     def importBooleanQuery(self, pathToFile):
         """Imports boolean queries from files to the query dictionary
@@ -302,9 +287,25 @@ class QueryProcessor(object):
                 dictionaryOfQueries[int(splittedQuery[0].strip())] = splittedQuery[1].strip()
             return dictionaryOfQueries
 
-    ################################################################################################################
-    ## COMM WITH INVERTED INDEX
-    ################################################################################################################
+    def preprocessedTerm(self, word):
+        """Preprocesses the given word and stems using the Preprocessor module
+
+        Parameters
+        ----------
+        word : String type
+            A word
+
+        Returns
+        -------
+        preprocessedTerm : String type
+            The stripped, lowercase and stemmed version of the given word
+        """
+        return self.ppr.stemWordPorter(self.ppr.toLowerCase(word.strip()))
+
+    ############################################
+    ## Communication with InvertedIndex class ##
+    ############################################
+
     def importInvertedIndexFromFile(self, pathToFile):
         """Imports an already built positional inverted index from a file
 

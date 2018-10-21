@@ -1,5 +1,6 @@
 from nltk.stem import PorterStemmer # Porter Stemmer
 import re # Python regular expressions
+# from nltk.stem.snowball import SnowballStemmerpo
 
 class Preprocessor(object):
     """Class of type object that provides a basic toolkit for text preprocessing

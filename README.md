@@ -11,7 +11,6 @@ Libraries and packages used (in alphabetical order):
 - operator
 - os
 - re
-- time
 - xml.etree.ElementTree
 
 ## Folder contents
