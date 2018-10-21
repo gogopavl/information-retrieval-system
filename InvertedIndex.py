@@ -1,4 +1,3 @@
-# Class that implements an inverted index structure
 from collections import OrderedDict
 import xml.etree.ElementTree as ET
 from Preprocessor import *
@@ -7,27 +6,66 @@ import os
 
 class InvertedIndex(object):
     '''Class that implements the positional inverted index'''
+    """Class of type object implementing a query processor engine
 
+    Fields
+    ------
+    invertedIndexDictionary : Object of type InvertedIndex()
+        The positional inverted index data structure
+    ppr : Object of type Preprocessor
+        The preprocessing toolkit
+    """
     ppr = Preprocessor()
 
     def __init__(self):
-        '''Constructor of Class InvertedIndex. Initializes inverted index dictionary structure.'''
+        """Constructor of Class InvertedIndex initializes inverted index dictionary structure
+        """
         self.invertedIndexDictionary = {}
 
     def buildIndexFromFile(self, pathToFile):
-        '''Method that invokes functions in order to build the positional inverted index'''
+        """Invokes parsing method in order to build the positional inverted index from a given collection (file)
+
+        Parameters
+        ----------
+        pathToFile : String type
+            The path leading to the collection file
+        """
         self.parseXMLFile(pathToFile)
 
     def initializeTerm(self, term):
-        '''Method that initializes the dictionary structure for the documents in which the term is located'''
+        """Initializes the dictionary structure for the documents in which the term is located
+
+        Parameters
+        ----------
+        term : String type
+            A given term
+        """
         self.invertedIndexDictionary[term] = OrderedDict()
 
     def initializeDoc(self, term , docID):
-        '''Method that initializes the list of positions that the term occurs within a document'''
+        """Initializes the list of positions that the term occurs within a document
+
+        Parameters
+        ----------
+        term : String type
+            A given term
+        docID : Int type
+            A given document ID
+        """
         self.invertedIndexDictionary[term][docID] = []
 
     def insertTermOccurrence(self, term, docID, position):
-        '''Method that inserts an occurence of a term in the inverted index'''
+        """Inserts an occurence of a term in the inverted index
+
+        Parameters
+        ----------
+        term : String type
+            A given term
+        docID : Int type
+            A given document ID
+        position : Int type
+            The position in which the term appears in the given document
+        """
         if term not in self.invertedIndexDictionary:
             self.initializeTerm(term)
         if docID not in self.invertedIndexDictionary[term]:
@@ -35,7 +73,17 @@ class InvertedIndex(object):
         self.invertedIndexDictionary[term][docID].append(position)
 
     def insertMultipleTermOccurrences(self, term, docID, listOfPositions):
-        '''Method that inserts a list of occurences of a term in the inverted index - useful for externaly building the inverted index'''
+        """Inserts a list of occurences of a term in the inverted index - useful for externally building the inverted index
+
+        Parameters
+        ----------
+        term : String type
+            A given term
+        docID : Int type
+            A given document ID
+        listOfPositions : List type of Ints
+            The list of positions in which the term appears in the given document
+        """
         if term not in self.invertedIndexDictionary:
             self.initializeTerm(term)
         if docID not in self.invertedIndexDictionary[term]:
@@ -43,7 +91,18 @@ class InvertedIndex(object):
         self.invertedIndexDictionary[term][docID].extend(listOfPositions)
 
     def getTermDocumentSet(self, term):
-        '''Method that returns the set of document ids for a given term'''
+        """Returns the set of document IDs for a given term
+
+        Parameters
+        ----------
+        term : String type
+            A given term whose document IDs need to be retrieved
+
+        Returns
+        -------
+        documentSet : Set type
+            A set containing the documents that contain the given term
+        """
         if term not in self.invertedIndexDictionary:
             emptySet = ()
             return emptySet
@@ -51,7 +110,18 @@ class InvertedIndex(object):
             return set(self.invertedIndexDictionary[term].keys())
 
     def getTermDocumentDictionary(self, term):
-        '''Method that returns the dictionary of document ids and positions for a given term'''
+        """Returns the dictionary of document IDs and list of positions for a given term
+
+        Parameters
+        ----------
+        term : String type
+            A given term whose document IDs need to be retrieved
+
+        Returns
+        -------
+        termDictionary : Dictionary type
+            A dictionary containing the documents that contain the given term and the list of positions for each document in which the term appears
+        """
         if term not in self.invertedIndexDictionary:
             emptyDictionary = {}
             return emptyDictionary
@@ -59,7 +129,13 @@ class InvertedIndex(object):
             return self.invertedIndexDictionary[term]
 
     def parseXMLFile(self, pathToFile):
-        '''Method that parses the collection of documents and updates the inverted index'''
+        """Parses the collection of documents and updates the inverted index
+
+        Parameters
+        ----------
+        pathToFile : String type
+            Path leading to the file with the collection
+        """
         tree = ET.parse(pathToFile)
         root = tree.getroot()
         hasHeadline = False
@@ -84,7 +160,13 @@ class InvertedIndex(object):
                             position += 1
 
     def exportInvertedIndexToDirectory(self, pathToFile):
-        '''Method that exports the positional inverted index to a file within a specified directory'''
+        """Exports the positional inverted index to a file within a specified directory
+
+        Parameters
+        ----------
+        pathToFile : String type
+            Path leading to the output file
+        """
         path = pathToFile.rsplit('/', 1)[0]
         if not os.path.exists(path): # Check whether the directory exists or not
             os.makedirs(path)
@@ -100,9 +182,21 @@ class InvertedIndex(object):
                 output.write('\n')
 
     def orderIndex(self, invertedIndex):
-        '''Method that orders the inverted index based on its keys'''
+        """Sorts the inverted index based on its keys - used when writing the index to a file in key order (alphanumeric)
+
+        Parameters
+        ----------
+        invertedIndex : InvertedIndex object type
+            A positional inverted index structure
+
+        Returns
+        -------
+        sortedII : InvertedIndex object type
+            The key sorted version of the inverted index
+        """
         return collections.OrderedDict(sorted(invertedIndex.items()))
 
     def printLength(self):
-        '''Method that return the number of items in the index'''
+        '''Method that prints the number of items in the index
+        '''
         print('Number of terms in II: {}'.format(len(self.invertedIndexDictionary)))
