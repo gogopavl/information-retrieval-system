@@ -1,4 +1,1 @@
-Preprocessor.pyc
-QueryProcessor.pyc
-PRF.pyc
-InvertedIndex.pyc
+*.pyc
