@@ -32,6 +32,9 @@ class QueryProcessor(object):
         self.collectionSize = 0 # Variable used to store the collection size for calculating the TFIDF queries
         self.booleanQueriesDictionary = OrderedDict() # Ordered dictionary used to store boolean queries - {queryID, booleanQuery}
         self.tfidfQueriesDictionary = OrderedDict() # Ordered dictionary used to store tfidf queries - {queryID, tfidfQuery}
+        self.queryTopRelevantDocumentsDictionary = OrderedDict() # Ordered dictionary to store top k query results
+        self.miniIndex = InvertedIndex() # Mini Inverted index used for the PRF TF-IDF score calculation
+        self.termTFIDFDictionary = {} # Dictionary to store terms and their tfidf for the PRF module
 
     def executeBooleanQueries(self):
         """Initializes results variable and invokes necessary methods to execute each of the given boolean queries
@@ -204,9 +207,9 @@ class QueryProcessor(object):
                     continue
                 for doc, positions in termDictionary.items():
                     if doc not in queryDocumentScores:
-                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Initialize term score
+                        queryDocumentScores[doc] = (1.0 + np.log10(len(positions))) * (np.log10(float(self.collectionSize)/float(termDictionarySize))) # Initialize term score
                     else:
-                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10((self.collectionSize)/termDictionarySize)) # Add to term score
+                        queryDocumentScores[doc] += (1.0 + np.log10(len(positions))) * (np.log10(float(self.collectionSize)/float(termDictionarySize))) # Add to term score
 
         tfidfRanked = sorted(queryDocumentScores.items(), key=lambda (k,v): v, reverse = True)
         return queryDocumentScores
@@ -302,9 +305,109 @@ class QueryProcessor(object):
         """
         return self.ppr.stemWordPorter(self.ppr.toLowerCase(word.strip()))
 
+    def expandQuery(self, numberOfTopDocuments, numberOfExpandedTerms):
+        self.importResultsFromFile('out/results.ranked.txt', numberOfTopDocuments) # Import first 10 ranked results for each query
+
+        for queryID, relevantDocumentList in self.queryTopRelevantDocumentsDictionary.iteritems():
+            self.importDocsFromCollection('data/trec.sample.xml', relevantDocumentList)
+            tempIndex = self.miniIndex.getIndexDictionary()
+            for term, documentDictionary in tempIndex.iteritems():
+                termFrequency = 0
+                termScore = 0
+                for document, postings in documentDictionary.iteritems():
+                    termFrequency += len(postings)
+                termDocumentFrequeny = len(self.ii.getTermDocumentDictionary(term))
+                termTFIDF = termFrequency * np.log10(float(self.collectionSize)/float(termDocumentFrequeny)) # Simple tfidf
+                self.termTFIDFDictionary[term] = termTFIDF
+            result = collections.OrderedDict(sorted(self.termTFIDFDictionary.items()))
+            expandedTermsString = ""
+            tempIndex.clear()
+            for counter, (entry, value) in enumerate(sorted(result.items(), key=lambda (k,v): v, reverse = True)):
+                expandedTermsString += entry + " "
+                if counter == numberOfExpandedTerms-1: # top 10 expanded terms
+                    break
+            print('{} {} + {}\n'.format(queryID, self.tfidfQueriesDictionary[queryID], expandedTermsString.strip()))
+            self.miniIndex = InvertedIndex()
+            self.termTFIDFDictionary.clear()
+
+    def importResultsFromFile(self, pathToFile, k):
+        """Imports top k TF-IDF results from a given file
+
+        Parameters
+        ----------
+        pathToFile : String type
+            The index file location
+        k : Integer type
+            Import the "k" first results for each query result within the file
+        """
+        counter = 0
+        wantedID = 1
+        with open(pathToFile, 'r') as resultsFile:
+            for line in resultsFile:
+                fields = line.split()
+                queryID = int(fields[0])
+                if queryID == wantedID:
+                    if counter == 0:
+                        self.queryTopRelevantDocumentsDictionary[queryID] = []
+                    if counter < k:
+                        documentID = int(fields[2])
+                        self.queryTopRelevantDocumentsDictionary[queryID].append(documentID)
+                        counter += 1
+                    else:
+                        counter = 0
+                        wantedID += 1
+
+    def importDocsFromCollection(self, pathToFile, documentIDList):
+        """Extracts the content of specific documents from the collection
+
+        Parameters
+        ----------
+        pathToFile : String type
+            The index file location#
+        documentIDList : List of Integers
+            The list with all the wanted document IDs
+        """
+        tree = ET.parse(pathToFile)
+        root = tree.getroot()
+        hasHeadline = False
+        position = 1 # Append all documents together so they increment the same variable
+        for child in root:
+            for node in child:
+                node_tag = node.tag
+                if node_tag == 'DOCNO':
+                    docID = int(node.text)
+                if docID in documentIDList:
+                    if node_tag == 'HEADLINE':
+                        hasHeadline = True
+                        headlineText = node.text.split("/", 1)[1].strip()
+                    if node_tag == 'TEXT' or node_tag == 'Text': # So that I can parse both input files
+                        # position = 1
+                        text = node.text
+                        if hasHeadline:
+                            headlineAndText = headlineText + ' ' + text
+                        else:
+                            headlineAndText = text
+
+                        for word in self.ppr.tokenize(self.ppr.toLowerCase(headlineAndText)):
+                            if (len(word) > 0) and (self.ppr.isNotAStopword(word)):
+                                self.miniIndex.insertTermOccurrence(self.ppr.stemWordPorter(word), 1, position)
+                                position += 1
+                    else:
+                        continue
+
     ############################################
     ## Communication with InvertedIndex class ##
     ############################################
+
+    def getCollectionSize(self):
+        """Returns collection size
+
+        Returns
+        -------
+        collectionSize : Integer type
+            The number of documents in the collection
+        """
+        return self.getCollectionSize
 
     def importInvertedIndexFromFile(self, pathToFile):
         """Imports an already built positional inverted index from a file

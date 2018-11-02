@@ -128,6 +128,16 @@ class InvertedIndex(object):
         else:
             return self.invertedIndexDictionary[term]
 
+    def getIndexDictionary(self):
+        """Returns the inverted index dictionary
+
+        Returns
+        -------
+        invertedIndex : Dictionary type
+            A dictionary containing terms, docs and postings
+        """
+        return self.invertedIndexDictionary
+
     def parseXMLFile(self, pathToFile):
         """Parses the collection of documents and updates the inverted index
 

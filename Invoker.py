@@ -1,7 +1,6 @@
 # Invoker class
 from InvertedIndex import *
 from QueryProcessor import *
-from PRF import *
 import time
 
 #########################################
@@ -19,22 +18,23 @@ import time
 # Run query processor for given queries #
 #########################################
 
-# qp = QueryProcessor()
-# qp.importInvertedIndexFromFile('out/index.txt')
+qp = QueryProcessor()
+qp.importInvertedIndexFromFile('out/index.txt')
 
 # qp.importBooleanQuery('queries/boolean.txt')
 # qp.importBooleanQuery('queries/queries.boolean.txt')
-# qp.importTFIDFQuery('queries/tfidf.txt')
+qp.importTFIDFQuery('queries/tfidf.txt')
 # qp.importTFIDFQuery('queries/queries.ranked.txt')
 
 # qp.executeBooleanQueries()
 # qp.executeTFIDFQueries()
 
-#qp.exportInvertedIndexToDirectory('outQP/')
+# qp.exportInvertedIndexToDirectory('outQP/')
 
 #########################################
 # Pseudo relevance feedback module run  #
 #########################################
 
-prf = PRF()
-prf.importResultsFromFile('out/results.ranked.txt', 10)
+# First argument = number of top k documents to retrieve from results
+# Second argument = number of terms with highest score to expand query
+qp.expandQuery(10, 10)
